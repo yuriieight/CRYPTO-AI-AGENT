@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #ecf0f1;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .success { border-left: 4px solid #27ae60; }
+        .error { border-left: 4px solid #e74c3c; }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .status.pass { background: #27ae60; color: white; }
+        .status.fail { background: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Crypto AI Agent - API Test Dashboard</h1>
+    
+    <div class="test-section">
+        <h2>1. Health Check</h2>
+        <button onclick="testHealth()">Test Health</button>
+        <div id="health-result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Market Data</h2>
+        <button onclick="testTopCryptos()">Get Top 10</button>
+        <button onclick="testBTCTicker()">BTC Ticker</button>
+        <button onclick="testHistorical()">Historical Data</button>
+        <div id="market-result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. AI Chat</h2>
+        <input type="text" id="chat-input" placeholder="Ask a question..." style="width: 60%; padding: 10px;">
+        <button onclick="testChat()">Send</button>
+        <div id="chat-result" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Summary</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <div id="summary-result" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8000';
+        const API_BASE = `${BASE_URL}/api/v1`;
+
+        function showResult(elementId, data, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = isSuccess ? 'result success' : 'result error';
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${BASE_URL}/health`);
+                const data = await response.json();
+                showResult('health-result', data, response.ok);
+            } catch (error) {
+                showResult('health-result', { error: error.message }, false);
+            }
+        }
+
+        async function testTopCryptos() {
+            try {
+                const response = await fetch(`${API_BASE}/market/top?limit=10`);
+                const data = await response.json();
+                showResult('market-result', data.slice(0, 3), response.ok);
+            } catch (error) {
+                showResult('market-result', { error: error.message }, false);
+            }
+        }
+
+        async function testBTCTicker() {
+            try {
+                const response = await fetch(`${API_BASE}/market/ticker/BTC/USDT`);
+                const data = await response.json();
+                showResult('market-result', data, response.ok);
+            } catch (error) {
+                showResult('market-result', { error: error.message }, false);
+            }
+        }
+
+        async function testHistorical() {
+            try {
+                const response = await fetch(`${API_BASE}/market/history/BTC/USDT?timeframe=1d&limit=10`);
+                const data = await response.json();
+                showResult('market-result', data.slice(0, 3), response.ok);
+            } catch (error) {
+                showResult('market-result', { error: error.message }, false);
+            }
+        }
+
+        async function testChat() {
+            const message = document.getElementById('chat-input').value;
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/ai/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        conversation_history: [],
+                        stream: false
+                    })
+                });
+                const data = await response.json();
+                showResult('chat-result', data, response.ok);
+            } catch (error) {
+                showResult('chat-result', { error: error.message }, false);
+            }
+        }
+
+        async function runAllTests() {
+            const tests = [
+                { name: 'Health Check', fn: () => fetch(`${BASE_URL}/health`) },
+                { name: 'Top Cryptos', fn: () => fetch(`${API_BASE}/market/top?limit=5`) },
+                { name: 'BTC Ticker', fn: () => fetch(`${API_BASE}/market/ticker/BTC/USDT`) },
+                { name: 'Historical', fn: () => fetch(`${API_BASE}/market/history/BTC/USDT?limit=5`) },
+            ];
+
+            const results = [];
+            for (const test of tests) {
+                try {
+                    const response = await test.fn();
+                    results.push({
+                        test: test.name,
+                        status: response.ok ? 'PASS' : 'FAIL',
+                        code: response.status
+                    });
+                } catch (error) {
+                    results.push({
+                        test: test.name,
+                        status: 'FAIL',
+                        error: error.message
+                    });
+                }
+            }
+
+            const passed = results.filter(r => r.status === 'PASS').length;
+            const summary = {
+                total: results.length,
+                passed: passed,
+                failed: results.length - passed,
+                results: results
+            };
+
+            showResult('summary-result', summary, passed === results.length);
+        }
+    </script>
+</body>
+</html>
