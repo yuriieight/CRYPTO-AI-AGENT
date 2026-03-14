@@ -1,38 +1,27 @@
-version: '3.8'
-
+version: "3.9"
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: crypto-ai-postgres
-    environment:
-      POSTGRES_DB: crypto_ai_db
-      POSTGRES_USER: crypto_user
-      POSTGRES_PASSWORD: crypto_password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U crypto_user"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    env_file: .env
+    depends_on: [postgres, redis]
 
-  # Redis
+  frontend:
+    build: ./frontend
+    ports: ["3000:80"]
+    depends_on: [backend]
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: crypto_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes: [pgdata:/var/lib/postgresql/data]
+
   redis:
     image: redis:7-alpine
-    container_name: crypto-ai-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    ports: ["6379:6379"]
 
 volumes:
-  postgres_data:
-  redis_data:
+  pgdata:
