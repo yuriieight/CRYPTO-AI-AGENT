@@ -8,7 +8,7 @@
 - **Група**: ФЕС-42
 - **Керівник**: Мисюк Ірина Володимирівна, асистент кафедри системного
 проектування
-- **Дата виконання**: [28.05.2005]
+- **Дата виконання**: [28.05.2026]
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-green.svg)](https://fastapi.tiangolo.com)
